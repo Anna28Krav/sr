@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Порівняння текстів за шинглами</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      color: #4CAF50;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 15px 0;
+      background: #4CAF50;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 25px;
+    }
+    th, td {
+      border: 1px solid #aaa;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #e0f7e9;
+    }
+    #similarity {
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Порівняння текстів за шинглами (крок 2)</h1>
+
+  <label>Файл 1: </label>
+  <input type="file" id="file1" accept=".txt"><br>
+
+  <label>Файл 2: </label>
+  <input type="file" id="file2" accept=".txt"><br>
+
+  <button onclick="compare()">Порівняти тексти</button>
+
+  <div id="similarity"></div>
+  <div id="output"></div>
+
+  <script>
+    function readFile(fileInput, callback) {
+      const file = fileInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => callback(e.target.result);
+        reader.readAsText(file, 'UTF-8');
+      } else {
+        callback("");
+      }
+    }
+
+    function tokenize(text) {
+      return text.toLowerCase()
+        .replace(/[^\w\sа-яіїєґ]/gi, '')
+        .split(/\s+/)
+        .filter(w => w.length > 0);
+    }
+
+    function generateShingles(words, size = 2, step = 2) {
+      const shingles = [];
+      for (let i = 0; i <= words.length - size; i += step) {
+        shingles.push(words.slice(i, i + size).join(' '));
+      }
+      return shingles;
+    }
+
+    function compare() {
+      readFile(document.getElementById('file1'), text1 => {
+        readFile(document.getElementById('file2'), text2 => {
+          const words1 = tokenize(text1);
+          const words2 = tokenize(text2);
+
+          const shingles1 = generateShingles(words1);
+          const shingles2 = generateShingles(words2);
+
+          const set1 = new Set(shingles1);
+          const set2 = new Set(shingles2);
+
+          const common = [...set1].filter(sh => set2.has(sh));
+          const totalUnique = new Set([...shingles1, ...shingles2]).size;
+          const similarity = (common.length / totalUnique * 100).toFixed(2);
+
+          // Вивід таблиці
+          let html = "<table><tr><th>Однакові шингли</th></tr>";
+          common.forEach(sh => {
+            html += `<tr><td>${sh}</td></tr>`;
+          });
+          html += "</table>";
+
+          document.getElementById("similarity").innerHTML = 
+            `🔍 Подібність текстів: <strong>${similarity}%</strong>`;
+
+          document.getElementById("output").innerHTML = html;
+        });
+      });
+    }
+  </script>
+
+</body>
+</html>
